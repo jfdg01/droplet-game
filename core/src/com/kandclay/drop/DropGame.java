@@ -27,7 +27,6 @@ public class DropGame extends ApplicationAdapter {
 
     // Raindrops
     private Array<Raindrop> raindrops;
-
     private Array<Texture> dropletImgs;
     private Sound dropletSound;
 
@@ -43,6 +42,7 @@ public class DropGame extends ApplicationAdapter {
     public void create() {
 
         raindrops = new Array<>();
+        dropletImgs = new Array<>();
 
         // Assets
         for (int i = 0; i < 13; i++) {
@@ -105,16 +105,13 @@ public class DropGame extends ApplicationAdapter {
         ScreenUtils.clear(0, 0, 0.2f, 1);
         camera.update();
 
+        // Draw the assets according to their current position
         batch.begin();
         batch.draw(bucketImg, bucket.x, bucket.y);
         for (Raindrop raindrop : raindrops) {
-
-
-            raindrop.setRectangleX(MathUtils.random(0, WIDTH - BUCKET_WIDTH));
-            raindrop.setRectangleY(raindrop.getRectangle().y - RAINDROP_FALL_SPEED * Gdx.graphics.getDeltaTime());
-            batch.draw(raindrop.getTexture(), MathUtils.random(0, WIDTH - BUCKET_WIDTH), HEIGHT);
-
-            
+            float x = raindrop.getRectangle().x;
+            float y = raindrop.getRectangle().y;
+            batch.draw(raindrop.getTexture(), x, y);
         }
         batch.end();
 
@@ -130,6 +127,7 @@ public class DropGame extends ApplicationAdapter {
             spawnRaindrop();
         }
 
+        // Update raindrop position
         for (Iterator<Raindrop> iter = raindrops.iterator(); iter.hasNext(); ) {
             Raindrop raindrop = iter.next();
             raindrop.getRectangle().y -= RAINDROP_FALL_SPEED * Gdx.graphics.getDeltaTime();
