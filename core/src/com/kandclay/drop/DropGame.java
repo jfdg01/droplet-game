@@ -1,13 +1,14 @@
 package com.kandclay.drop;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
@@ -21,29 +22,31 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import static com.kandclay.drop.Constants.*;
 
 import java.util.Iterator;
 
-public class DropGame extends ApplicationAdapter {
+public class DropGame extends Game {
+
+    // Atlas
+    TextureAtlas atlas;
 
     // Bucket
     private Rectangle bucket;
-    private Texture bucketTexture;
+    private TextureRegion bucketTexture;
 
     // Raindrops
     private Array<Raindrop> raindrops;
-    private Array<Texture> dropletTextures;
+    private Array<TextureRegion> dropletTextures;
     private Sound dropletSound;
     Array<MissedRaindrop> missedRaindrops = new Array<>();
     private long lastDropTime;
-    private Texture greyDropTexture;
+    private TextureRegion greyDropTexture;
 
     // Background
-    private Texture tileTexture;
+    private TextureRegion tileTexture;
     private int tileWidth;
     private int tileHeight;
     private int backgroundY = 0;
@@ -56,8 +59,8 @@ public class DropGame extends ApplicationAdapter {
     private Vector3 touchPos;
 
     // Controls
-    private Texture arrowLeftTexture;
-    private Texture arrowRightTexture;
+    private TextureRegion arrowLeftTexture;
+    private TextureRegion arrowRightTexture;
     private Image arrowLeftButton;
     private Image arrowRightButton;
     Rectangle leftButtonBounds;
@@ -71,14 +74,20 @@ public class DropGame extends ApplicationAdapter {
     Viewport viewport;
 
     public void loadTextures() {
-        bucketTexture = new Texture(Gdx.files.internal("textures/bucket.png"));
-        greyDropTexture = new Texture(Gdx.files.internal("textures/droplet-greyscale.png"));
-        tileTexture = new Texture(Gdx.files.internal("textures/rain.jpg"));
-        arrowLeftTexture = new Texture(Gdx.files.internal("textures/arrow-left.png"));
-        arrowRightTexture = new Texture(Gdx.files.internal("textures/arrow-right.png"));
+
+        atlas = new TextureAtlas(Gdx.files.internal("atlas/main.atlas"));
+        bucketTexture = atlas.findRegion("bucket");
+        greyDropTexture = atlas.findRegion("droplet-greyscale");
+        tileTexture = atlas.findRegion("rain");
+        arrowLeftTexture = atlas.findRegion("arrow-left");
+        arrowRightTexture = atlas.findRegion("arrow-right");
+
+        dropletTextures = new Array<>();
         for (int i = 0; i < 13; i++) {
-            Texture texture = new Texture(Gdx.files.internal("textures/droplet-" + i + ".png"));
-            dropletTextures.add(texture);
+            TextureRegion dropletTexture = atlas.findRegion("droplet-" + i);
+            if (dropletTexture != null) {
+                dropletTextures.add(dropletTexture);
+            }
         }
     }
 
@@ -137,7 +146,7 @@ public class DropGame extends ApplicationAdapter {
         camera.setToOrtho(false, WIDTH, HEIGHT);
 
         // Stage
-        viewport = new FitViewport(800, 480, camera); // Use your game's world size
+        viewport = new FitViewport(WIDTH, HEIGHT, camera); // Use your game's world size
         stage = new Stage(viewport, batch);
         Gdx.input.setInputProcessor(stage); // Set the stage as the input processor
         stage.addActor(arrowLeftButton);
@@ -179,8 +188,8 @@ public class DropGame extends ApplicationAdapter {
         bucket.height = BUCKET_HEIGHT;
 
         // Background parameters
-        tileHeight = (int) (tileTexture.getHeight() * SCALE_FACTOR);
-        tileWidth = (int) (tileTexture.getWidth() * SCALE_FACTOR);
+        tileHeight = (int) (tileTexture.getRegionHeight() * SCALE_FACTOR);
+        tileWidth = (int) (tileTexture.getRegionWidth() * SCALE_FACTOR);
     }
 
     public void handleArrowKeys(float moveAmount) {
@@ -250,7 +259,7 @@ public class DropGame extends ApplicationAdapter {
         bucketMoveAmount = BUCKET_MOVE_SPEED * deltaTime;
 
         backgroundY -= (int) (BACKGROUND_SCROLL_SPEED * deltaTime);
-        if (backgroundY < -tileTexture.getHeight() * BACKGROUND_SCROLL_SPEED) {
+        if (backgroundY < -tileTexture.getRegionHeight() * BACKGROUND_SCROLL_SPEED) {
             backgroundY = 0;
         }
 
@@ -346,17 +355,18 @@ public class DropGame extends ApplicationAdapter {
         rectangle.height = RAINDROP_HEIGHT;
 
         int randomInt = MathUtils.random(0, 12);
-        Texture texture = new Texture(Gdx.files.internal("textures/droplet-" + randomInt + ".png"));
+        TextureRegion textureRegion = atlas.findRegion("droplet-" + randomInt);
 
-        Raindrop raindrop = new Raindrop(rectangle, texture);
+        Raindrop raindrop = new Raindrop(rectangle, textureRegion);
 
         raindrops.add(raindrop);
         lastDropTime = TimeUtils.nanoTime();
     }
 
+
     private void renderBackground(SpriteBatch batch) {
-        float scaledHeight = tileTexture.getHeight() * SCALE_FACTOR;
-        float scaledWidth = tileTexture.getWidth() * SCALE_FACTOR;
+        float scaledHeight = tileTexture.getRegionHeight() * SCALE_FACTOR;
+        float scaledWidth = tileTexture.getRegionWidth() * SCALE_FACTOR;
 
         for (float x = LEFT_OF_SCREEN; x < WIDTH; x += scaledWidth) {
             for (float y = backgroundY; y < HEIGHT; y += scaledHeight) {
@@ -389,17 +399,10 @@ public class DropGame extends ApplicationAdapter {
 
     @Override
     public void dispose() {
-        for (Texture texture : dropletTextures) {
-            texture.dispose();
-        }
-        arrowLeftTexture.dispose();
-        arrowRightTexture.dispose();
+        atlas.dispose();
         stage.dispose();
-        tileTexture.dispose();
-        bucketTexture.dispose();
         dropletSound.dispose();
         rainMusic.dispose();
         batch.dispose();
-        greyDropTexture.dispose();
     }
 }
