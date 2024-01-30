@@ -9,6 +9,8 @@ public class Raindrop {
     private Rectangle rectangle;
     private Texture texture;
 
+
+
     public Raindrop(Rectangle rectangle, Texture texture) {
         this.rectangle = rectangle;
         this.texture = texture;
