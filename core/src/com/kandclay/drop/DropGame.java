@@ -30,6 +30,10 @@ public class DropGame extends ApplicationAdapter {
     private Array<Texture> dropletImgs;
     private Sound dropletSound;
 
+    private Texture greyscaleDropImg;
+
+    private Texture photo;
+
     private long lastDropTime;
 
     // Extra
@@ -44,7 +48,8 @@ public class DropGame extends ApplicationAdapter {
         raindrops = new Array<>();
         dropletImgs = new Array<>();
 
-        // Assets
+
+        // Raindrops
         for (int i = 0; i < 13; i++) {
             int randomNumber = MathUtils.random(0, 12);
             Texture randomImg = new Texture(Gdx.files.internal("textures/droplet-" + randomNumber + ".png"));
@@ -52,8 +57,13 @@ public class DropGame extends ApplicationAdapter {
             Raindrop raindrop = new Raindrop(rectangle, randomImg);
             raindrops.add(raindrop);
         }
-        bucketImg = new Texture(Gdx.files.internal("textures/bucket.png"));
 
+        // Images
+        bucketImg = new Texture(Gdx.files.internal("textures/bucket.png"));
+        greyscaleDropImg = new Texture(Gdx.files.internal("textures/droplet-greyscale.png"));
+        photo = new Texture(Gdx.files.internal("textures/fd.png"));
+
+        // Sounds
         dropletSound = Gdx.audio.newSound(Gdx.files.internal("sounds/drop.wav"));
         rainMusic = Gdx.audio.newMusic(Gdx.files.internal("sounds/rain.mp3"));
 
@@ -80,7 +90,7 @@ public class DropGame extends ApplicationAdapter {
         touchPos = new Vector3();
     }
 
-    public void handleLeftKey(float deltaTime, float moveAmount) {
+    public void handleLeftKey(float moveAmount) {
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             if (bucket.x - moveAmount < LEFT_WALL) {
                 bucket.x = 0;
@@ -90,7 +100,7 @@ public class DropGame extends ApplicationAdapter {
         }
     }
 
-    public void handleRightKey(float deltaTime, float moveAmount) {
+    public void handleRightKey(float moveAmount) {
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             if (bucket.x + moveAmount > RIGHT_WALL - BUCKET_WIDTH) {
                 bucket.x = RIGHT_WALL - BUCKET_WIDTH;
@@ -103,10 +113,12 @@ public class DropGame extends ApplicationAdapter {
     @Override
     public void render() {
         ScreenUtils.clear(0, 0, 0.2f, 1);
+
         camera.update();
 
         // Draw the assets according to their current position
         batch.begin();
+        batch.draw(photo, 0, 0, WIDTH, HEIGHT);
         batch.draw(bucketImg, bucket.x, bucket.y);
         for (Raindrop raindrop : raindrops) {
             float x = raindrop.getRectangle().x;
@@ -118,25 +130,35 @@ public class DropGame extends ApplicationAdapter {
         float deltaTime = Gdx.graphics.getDeltaTime();
         float moveAmount = BUCKET_MOVE_SPEED * deltaTime;
 
-        handleLeftKey(deltaTime, moveAmount);
-        handleRightKey(deltaTime, moveAmount);
+        handleLeftKey(moveAmount);
+        handleRightKey(moveAmount);
         handleTouchInputBucket();
-
 
         if (TimeUtils.nanoTime() - lastDropTime > ONE_SECOND_NS) {
             spawnRaindrop();
         }
 
-        // Update raindrop position
+        updateRaindropPosition();
+    }
+
+    private void updateRaindropPosition() {
+        batch.begin();
         for (Iterator<Raindrop> iter = raindrops.iterator(); iter.hasNext(); ) {
+
             Raindrop raindrop = iter.next();
             raindrop.getRectangle().y -= RAINDROP_FALL_SPEED * Gdx.graphics.getDeltaTime();
-            if (raindrop.getRectangle().y + RAINDROP_WIDTH < 0) iter.remove();
+
+            if (raindrop.getRectangle().y + RAINDROP_WIDTH < 0) {
+                iter.remove();
+                batch.draw(bucketImg, raindrop.getRectangle().x, raindrop.getRectangle().y);
+            }
+
             if (raindrop.getRectangle().overlaps(bucket)) {
                 dropletSound.play();
                 iter.remove();
             }
         }
+        batch.end();
     }
 
     private void handleTouchInputBucket() {
