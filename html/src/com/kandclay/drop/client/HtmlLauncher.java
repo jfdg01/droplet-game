@@ -3,7 +3,7 @@ package com.kandclay.drop.client;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.gwt.GwtApplication;
 import com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration;
-import com.kandclay.drop.Drop;
+import com.kandclay.drop.DropGame;
 
 public class HtmlLauncher extends GwtApplication {
 
@@ -17,6 +17,6 @@ public class HtmlLauncher extends GwtApplication {
 
     @Override
     public ApplicationListener createApplicationListener() {
-        return new Drop();
+        return new DropGame();
     }
 }
