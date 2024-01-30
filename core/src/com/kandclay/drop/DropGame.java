@@ -29,12 +29,13 @@ public class DropGame extends ApplicationAdapter {
     private Array<Raindrop> raindrops;
     private Array<Texture> dropletImgs;
     private Sound dropletSound;
+    Array<MissedRaindrop> missedRaindrops = new Array<>();
+    private long lastDropTime;
+
 
     private Texture greyscaleDropImg;
-
     private Texture photo;
 
-    private long lastDropTime;
 
     // Extra
     private Music rainMusic;
@@ -45,8 +46,8 @@ public class DropGame extends ApplicationAdapter {
     @Override
     public void create() {
 
-        raindrops = new Array<>();
-        dropletImgs = new Array<>();
+        raindrops = new Array<Raindrop>();
+        dropletImgs = new Array<Texture>();
 
 
         // Raindrops
@@ -84,7 +85,7 @@ public class DropGame extends ApplicationAdapter {
         bucket.width = BUCKET_WIDTH;
         bucket.height = BUCKET_HEIGHT;
 
-        raindrops = new Array<>();
+        raindrops = new Array<Raindrop>();
         spawnRaindrop();
 
         touchPos = new Vector3();
@@ -112,13 +113,13 @@ public class DropGame extends ApplicationAdapter {
 
     @Override
     public void render() {
-        ScreenUtils.clear(0, 0, 0.2f, 1);
+        ScreenUtils.clear(0, 0, 0.2f, 1); // Light blue
 
         camera.update();
 
         // Draw the assets according to their current position
         batch.begin();
-        batch.draw(photo, 0, 0, WIDTH, HEIGHT);
+        batch.draw(photo, LEFT_OF_SCREEN, BOTTOM_OF_SCREEN, WIDTH, HEIGHT);
         batch.draw(bucketImg, bucket.x, bucket.y);
         for (Raindrop raindrop : raindrops) {
             float x = raindrop.getRectangle().x;
@@ -127,9 +128,13 @@ public class DropGame extends ApplicationAdapter {
         }
         batch.end();
 
+        updateRaindropPosition();
+        renderMissedRaindrops();
+
         float deltaTime = Gdx.graphics.getDeltaTime();
         float moveAmount = BUCKET_MOVE_SPEED * deltaTime;
 
+        updateBlinkingEffect(deltaTime);
         handleLeftKey(moveAmount);
         handleRightKey(moveAmount);
         handleTouchInputBucket();
@@ -137,29 +142,60 @@ public class DropGame extends ApplicationAdapter {
         if (TimeUtils.nanoTime() - lastDropTime > ONE_SECOND_NS) {
             spawnRaindrop();
         }
-
-        updateRaindropPosition();
     }
 
     private void updateRaindropPosition() {
-        batch.begin();
         for (Iterator<Raindrop> iter = raindrops.iterator(); iter.hasNext(); ) {
 
             Raindrop raindrop = iter.next();
             raindrop.getRectangle().y -= RAINDROP_FALL_SPEED * Gdx.graphics.getDeltaTime();
 
+            // Remove raindrop if it's below the screen
             if (raindrop.getRectangle().y + RAINDROP_WIDTH < 0) {
+                missedRaindrops.add(new MissedRaindrop(raindrop.getRectangle().x));
                 iter.remove();
-                batch.draw(bucketImg, raindrop.getRectangle().x, raindrop.getRectangle().y);
             }
 
+            // Remove raindrop if it's in the bucket
             if (raindrop.getRectangle().overlaps(bucket)) {
                 dropletSound.play();
                 iter.remove();
             }
         }
+    }
+
+    private void renderMissedRaindrops() {
+        batch.begin();
+        batch.setColor(1, 1, 1, 0.7f); // Set opacity to 70%
+        for (MissedRaindrop missed : missedRaindrops) {
+            if (missed.visible) {
+                batch.draw(greyscaleDropImg, missed.x, BOTTOM_OF_SCREEN);
+            }
+            if (missed.dead) {
+                missedRaindrops.removeValue(missed, true);
+            }
+        }
+        batch.setColor(1, 1, 1, 1); // Reset opacity to 100%
         batch.end();
     }
+
+    private void updateBlinkingEffect(float deltaTime) {
+        for (MissedRaindrop missed : missedRaindrops) {
+            missed.timer += deltaTime;
+            if (missed.timer >= BLINKING_TIME) {
+                missed.visible = !missed.visible;
+                missed.timer = 0;
+                if (!missed.visible) {
+                    missed.times_blinked++;
+                }
+            }
+
+            if (missed.times_blinked >= MAX_TIMES_BLINKED) {
+                missed.dead = true;
+            }
+        }
+    }
+
 
     private void handleTouchInputBucket() {
         if (Gdx.input.isTouched()) {
@@ -185,7 +221,6 @@ public class DropGame extends ApplicationAdapter {
         lastDropTime = TimeUtils.nanoTime();
     }
 
-
     @Override
     public void dispose() {
         for (Texture texture : dropletImgs) {
@@ -195,6 +230,6 @@ public class DropGame extends ApplicationAdapter {
         dropletSound.dispose();
         rainMusic.dispose();
         batch.dispose();
+        greyscaleDropImg.dispose();
     }
-
 }
