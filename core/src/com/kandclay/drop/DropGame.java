@@ -8,12 +8,19 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import static com.kandclay.drop.Constants.*;
 
@@ -23,18 +30,21 @@ public class DropGame extends ApplicationAdapter {
 
     // Bucket
     private Rectangle bucket;
-    private Texture bucketImg;
+    private Texture bucketTexture;
 
     // Raindrops
     private Array<Raindrop> raindrops;
-    private Array<Texture> dropletImgs;
+    private Array<Texture> dropletTextures;
     private Sound dropletSound;
     Array<MissedRaindrop> missedRaindrops = new Array<>();
     private long lastDropTime;
+    private Texture greyDropTexture;
 
-
-    private Texture greyscaleDropImg;
-    private Texture photo;
+    // Background
+    private Texture tileTexture;
+    private int tileWidth;
+    private int tileHeight;
+    private int backgroundY = 0;
 
 
     // Extra
@@ -43,11 +53,20 @@ public class DropGame extends ApplicationAdapter {
     private SpriteBatch batch;
     private Vector3 touchPos;
 
+    // Controls
+    private Texture arrowLeftTexture;
+    private Texture arrowRightTexture;
+    boolean isLeftPressed = false;
+    boolean isRightPressed = false;
+
+    // Stage
+    Stage stage;
+
     @Override
     public void create() {
 
-        raindrops = new Array<Raindrop>();
-        dropletImgs = new Array<Texture>();
+        raindrops = new Array<>();
+        dropletTextures = new Array<>();
 
 
         // Raindrops
@@ -60,9 +79,58 @@ public class DropGame extends ApplicationAdapter {
         }
 
         // Images
-        bucketImg = new Texture(Gdx.files.internal("textures/bucket.png"));
-        greyscaleDropImg = new Texture(Gdx.files.internal("textures/droplet-greyscale.png"));
-        photo = new Texture(Gdx.files.internal("textures/fd.png"));
+        bucketTexture = new Texture(Gdx.files.internal("textures/bucket.png"));
+        greyDropTexture = new Texture(Gdx.files.internal("textures/droplet-greyscale.png"));
+        tileTexture = new Texture(Gdx.files.internal("textures/rain.jpg"));
+
+        arrowLeftTexture = new Texture(Gdx.files.internal("textures/arrow-left.png"));
+        arrowRightTexture = new Texture(Gdx.files.internal("textures/arrow-right.png"));
+
+        Image arrowLeftButton = new Image(new TextureRegionDrawable(new TextureRegion(arrowLeftTexture)));
+        Image arrowRightButton = new Image(new TextureRegionDrawable(new TextureRegion(arrowRightTexture)));
+
+        // Set the size of the buttons
+        float buttonSize = BUCKET_WIDTH; // Same size as the bucket
+        arrowLeftButton.setSize(buttonSize, buttonSize);
+        arrowRightButton.setSize(buttonSize, buttonSize);
+
+        // Position the buttons at the top center of the screen
+        float buttonY = HEIGHT - buttonSize - PADDING_TOP_PIXELS; // 20 pixels from the top
+        float centerX = (float) WIDTH / 2;
+        arrowLeftButton.setPosition(centerX - buttonSize - PADDING_BETWEEN_BUTTONS, buttonY); // 10 pixels apart
+        arrowRightButton.setPosition(centerX + PADDING_BETWEEN_BUTTONS, buttonY);
+        arrowLeftButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                isLeftPressed = true;
+                return true; // Return true to indicate the event was handled
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                isLeftPressed = false;
+            }
+        });
+
+        arrowRightButton.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                isRightPressed = true;
+                return true; // Return true to indicate the event was handled
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                isRightPressed = false;
+            }
+        });
+
+
+        stage = new Stage(new ScreenViewport());
+        Gdx.input.setInputProcessor(stage); // Set the stage as the input processor
+
+        stage.addActor(arrowLeftButton);
+        stage.addActor(arrowRightButton);
 
         // Sounds
         dropletSound = Gdx.audio.newSound(Gdx.files.internal("sounds/drop.wav"));
@@ -85,28 +153,51 @@ public class DropGame extends ApplicationAdapter {
         bucket.width = BUCKET_WIDTH;
         bucket.height = BUCKET_HEIGHT;
 
+        tileHeight = (int) (tileTexture.getHeight() * SCALE_FACTOR);
+        tileWidth = (int) (tileTexture.getWidth() * SCALE_FACTOR);
+
         raindrops = new Array<Raindrop>();
         spawnRaindrop();
 
         touchPos = new Vector3();
     }
 
-    public void handleLeftKey(float moveAmount) {
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            if (bucket.x - moveAmount < LEFT_WALL) {
-                bucket.x = 0;
-            } else {
-                bucket.x -= moveAmount;
+    public void handleMovementKey(float moveAmount, int direction) {
+        if (direction == LEFT) {
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+                if (bucket.x - moveAmount < LEFT_OF_SCREEN) {
+                    bucket.x = 0;
+                } else {
+                    bucket.x -= moveAmount;
+                }
+            }
+        }
+
+        if (direction == RIGHT) {
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+                if (bucket.x + moveAmount > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
+                    bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
+                } else {
+                    bucket.x += moveAmount;
+                }
             }
         }
     }
 
-    public void handleRightKey(float moveAmount) {
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            if (bucket.x + moveAmount > RIGHT_WALL - BUCKET_WIDTH) {
-                bucket.x = RIGHT_WALL - BUCKET_WIDTH;
+    private void handleMovementButton(float bucketMoveAmount, int direction) {
+        if (direction == LEFT) {
+            if (bucket.x - bucketMoveAmount < LEFT_OF_SCREEN) {
+                bucket.x = 0;
             } else {
-                bucket.x += moveAmount;
+                bucket.x -= bucketMoveAmount;
+            }
+        }
+
+        if (direction == RIGHT) {
+            if (bucket.x + bucketMoveAmount > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
+                bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
+            } else {
+                bucket.x += bucketMoveAmount;
             }
         }
     }
@@ -119,8 +210,8 @@ public class DropGame extends ApplicationAdapter {
 
         // Draw the assets according to their current position
         batch.begin();
-        batch.draw(photo, LEFT_OF_SCREEN, BOTTOM_OF_SCREEN, WIDTH, HEIGHT);
-        batch.draw(bucketImg, bucket.x, bucket.y);
+        renderBackground(batch);
+        batch.draw(bucketTexture, bucket.x, bucket.y);
         for (Raindrop raindrop : raindrops) {
             float x = raindrop.getRectangle().x;
             float y = raindrop.getRectangle().y;
@@ -132,16 +223,33 @@ public class DropGame extends ApplicationAdapter {
         renderMissedRaindrops();
 
         float deltaTime = Gdx.graphics.getDeltaTime();
-        float moveAmount = BUCKET_MOVE_SPEED * deltaTime;
+        float bucketMoveAmount = BUCKET_MOVE_SPEED * deltaTime;
+
+        if (isLeftPressed) {
+            handleMovementButton(bucketMoveAmount, LEFT);
+        }
+        if (isRightPressed) {
+            handleMovementButton(bucketMoveAmount, RIGHT);
+        }
+
+        backgroundY -= (int) (BACKGROUND_SCROLL_SPEED * deltaTime);
+        if (backgroundY < -tileTexture.getHeight() * BACKGROUND_SCROLL_SPEED) {
+            backgroundY = 0;
+        }
 
         updateBlinkingEffect(deltaTime);
-        handleLeftKey(moveAmount);
-        handleRightKey(moveAmount);
-        handleTouchInputBucket();
+        handleMovementKey(bucketMoveAmount, LEFT);
+        handleMovementKey(bucketMoveAmount, RIGHT);
+
+        // handleTouchInputBucket();
 
         if (TimeUtils.nanoTime() - lastDropTime > ONE_SECOND_NS) {
             spawnRaindrop();
         }
+
+        stage.act(Gdx.graphics.getDeltaTime());
+        stage.draw();
+
     }
 
     private void updateRaindropPosition() {
@@ -169,7 +277,7 @@ public class DropGame extends ApplicationAdapter {
         batch.setColor(1, 1, 1, 0.7f); // Set opacity to 70%
         for (MissedRaindrop missed : missedRaindrops) {
             if (missed.visible) {
-                batch.draw(greyscaleDropImg, missed.x, BOTTOM_OF_SCREEN);
+                batch.draw(greyDropTexture, missed.x, BOTTOM_OF_SCREEN);
             }
             if (missed.dead) {
                 missedRaindrops.removeValue(missed, true);
@@ -221,15 +329,30 @@ public class DropGame extends ApplicationAdapter {
         lastDropTime = TimeUtils.nanoTime();
     }
 
+    private void renderBackground(SpriteBatch batch) {
+        float scaledHeight = tileTexture.getHeight() * SCALE_FACTOR;
+        float scaledWidth = tileTexture.getWidth() * SCALE_FACTOR;
+
+        for (float x = LEFT_OF_SCREEN; x < WIDTH; x += scaledWidth) {
+            for (float y = backgroundY; y < HEIGHT; y += scaledHeight) {
+                batch.draw(tileTexture, x, y, scaledWidth, scaledHeight);
+            }
+        }
+    }
+
     @Override
     public void dispose() {
-        for (Texture texture : dropletImgs) {
+        for (Texture texture : dropletTextures) {
             texture.dispose();
         }
-        bucketImg.dispose();
+        arrowLeftTexture.dispose();
+        arrowRightTexture.dispose();
+        stage.dispose();
+        tileTexture.dispose();
+        bucketTexture.dispose();
         dropletSound.dispose();
         rainMusic.dispose();
         batch.dispose();
-        greyscaleDropImg.dispose();
+        greyDropTexture.dispose();
     }
 }
