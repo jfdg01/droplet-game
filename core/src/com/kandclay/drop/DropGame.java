@@ -30,7 +30,7 @@ import java.util.Iterator;
 
 public class DropGame extends Game {
 
-    // Atlas
+    /*// Atlas
     TextureAtlas atlas;
 
     // Bucket
@@ -71,92 +71,18 @@ public class DropGame extends Game {
 
     // Stage
     Stage stage;
-    Viewport viewport;
-
-    public void loadTextures() {
-
-        atlas = new TextureAtlas(Gdx.files.internal("atlas/main.atlas"));
-        bucketTexture = atlas.findRegion("bucket");
-        greyDropTexture = atlas.findRegion("droplet-greyscale");
-        tileTexture = atlas.findRegion("rain");
-        arrowLeftTexture = atlas.findRegion("arrow-left");
-        arrowRightTexture = atlas.findRegion("arrow-right");
-
-        dropletTextures = new Array<>();
-        for (int i = 0; i < 13; i++) {
-            TextureRegion dropletTexture = atlas.findRegion("droplet-" + i);
-            if (dropletTexture != null) {
-                dropletTextures.add(dropletTexture);
-            }
-        }
-    }
-
-    private void createButtons() {
-        arrowLeftButton = new Image(new TextureRegionDrawable(new TextureRegion(arrowLeftTexture)));
-        arrowRightButton = new Image(new TextureRegionDrawable(new TextureRegion(arrowRightTexture)));
-
-        // Set the size of the buttons
-        float buttonSize = BUCKET_WIDTH; // Same size as the bucket
-        arrowLeftButton.setSize(buttonSize, buttonSize);
-        arrowRightButton.setSize(buttonSize, buttonSize);
-
-        // Position the buttons at the top center of the screen
-        float buttonY = HEIGHT - buttonSize - PADDING_TOP_PIXELS; // 20 pixels from the top
-        float centerX = (float) WIDTH / 2;
-        arrowLeftButton.setPosition(centerX - buttonSize - PADDING_BETWEEN_BUTTONS, buttonY); // 10 pixels apart
-        arrowRightButton.setPosition(centerX + PADDING_BETWEEN_BUTTONS, buttonY);
-
-        leftButtonBounds = new Rectangle(arrowLeftButton.getX(), arrowLeftButton.getY(),
-                arrowLeftButton.getWidth(), arrowLeftButton.getHeight());
-        rightButtonBounds = new Rectangle(arrowRightButton.getX(), arrowRightButton.getY(),
-                arrowRightButton.getWidth(), arrowRightButton.getHeight());
-        arrowLeftButton.addListener(new InputListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                isLeftPressed = true;
-                return true; // Return true to indicate the event was handled
-            }
-
-            @Override
-            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                isLeftPressed = false;
-            }
-        });
-
-        arrowRightButton.addListener(new InputListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                isRightPressed = true;
-                return true; // Return true to indicate the event was handled
-            }
-
-            @Override
-            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                isRightPressed = false;
-            }
-        });
-    }
-
-    private void createViewport() {
-        // Batch
-        batch = new SpriteBatch();
-
-        // Camera
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, WIDTH, HEIGHT);
-
-        // Stage
-        viewport = new FitViewport(WIDTH, HEIGHT, camera); // Use your game's world size
-        stage = new Stage(viewport, batch);
-        Gdx.input.setInputProcessor(stage); // Set the stage as the input processor
-        stage.addActor(arrowLeftButton);
-        stage.addActor(arrowRightButton);
-    }
+    Viewport viewport;*/
 
     @Override
     public void create() {
 
-        dropletTextures = new Array<>();
+        // Create an instance of your GameScreen
+        GameScreen gameScreen = new GameScreen(this); // Assuming GameScreen has a constructor that takes a Game instance
+
+        // Set the screen to your game screen
+        this.setScreen(gameScreen);
+
+        /*dropletTextures = new Array<>();
         raindrops = new Array<>();
         touchPos = new Vector3();
 
@@ -189,55 +115,14 @@ public class DropGame extends Game {
 
         // Background parameters
         tileHeight = (int) (tileTexture.getRegionHeight() * SCALE_FACTOR);
-        tileWidth = (int) (tileTexture.getRegionWidth() * SCALE_FACTOR);
-    }
-
-    public void handleArrowKeys(float moveAmount) {
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            if (bucket.x - moveAmount < LEFT_OF_SCREEN) {
-                bucket.x = 0;
-            } else {
-                bucket.x -= moveAmount;
-            }
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            if (bucket.x + moveAmount > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
-                bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
-            } else {
-                bucket.x += moveAmount;
-            }
-        }
-
-    }
-
-    private void handleMovementButtons(float bucketMoveAmount) {
-        if (isLeftPressed) {
-            if (bucket.x - bucketMoveAmount < LEFT_OF_SCREEN) {
-                bucket.x = 0;
-            } else {
-                bucket.x -= bucketMoveAmount;
-            }
-        }
-
-        if (isRightPressed) {
-            if (bucket.x + bucketMoveAmount > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
-                bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
-            } else {
-                bucket.x += bucketMoveAmount;
-            }
-        }
-    }
-
-    private void handleControls() {
-        handleMovementButtons(bucketMoveAmount);
-        handleArrowKeys(bucketMoveAmount);
-        handleTouchInput();
+        tileWidth = (int) (tileTexture.getRegionWidth() * SCALE_FACTOR);*/
     }
 
     @Override
     public void render() {
-        ScreenUtils.clear(0, 0, 0.2f, 1); // Light blue
+        super.render();
+
+        /*ScreenUtils.clear(0, 0, 0.2f, 1); // Light blue
 
         camera.update();
 
@@ -271,113 +156,12 @@ public class DropGame extends Game {
         }
 
         stage.act(Gdx.graphics.getDeltaTime());
-        stage.draw();
-    }
-
-    private void updateRaindropPosition() {
-        for (Iterator<Raindrop> iter = raindrops.iterator(); iter.hasNext(); ) {
-
-            Raindrop raindrop = iter.next();
-            raindrop.getRectangle().y -= RAINDROP_FALL_SPEED * Gdx.graphics.getDeltaTime();
-
-            // Remove raindrop if it's below the screen
-            if (raindrop.getRectangle().y + RAINDROP_WIDTH < 0) {
-                missedRaindrops.add(new MissedRaindrop(raindrop.getRectangle().x));
-                iter.remove();
-            }
-
-            // Remove raindrop if it's in the bucket
-            if (raindrop.getRectangle().overlaps(bucket)) {
-                dropletSound.play();
-                iter.remove();
-            }
-        }
-    }
-
-    private void renderMissedRaindrops() {
-        batch.begin();
-        batch.setColor(1, 1, 1, 0.7f); // Set opacity to 70%
-        for (MissedRaindrop missed : missedRaindrops) {
-            if (missed.visible) {
-                batch.draw(greyDropTexture, missed.x, BOTTOM_OF_SCREEN);
-            }
-            if (missed.dead) {
-                missedRaindrops.removeValue(missed, true);
-            }
-        }
-        batch.setColor(1, 1, 1, 1); // Reset opacity to 100%
-        batch.end();
-    }
-
-    private void updateBlinkingEffect(float deltaTime) {
-        for (MissedRaindrop missed : missedRaindrops) {
-            missed.timer += deltaTime;
-            if (missed.timer >= BLINKING_TIME) {
-                missed.visible = !missed.visible;
-                missed.timer = 0;
-                if (!missed.visible) {
-                    missed.times_blinked++;
-                }
-            }
-
-            if (missed.times_blinked >= MAX_TIMES_BLINKED) {
-                missed.dead = true;
-            }
-        }
-    }
-
-    private void handleTouchInput() {
-        if (Gdx.input.isTouched()) {
-            touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
-            camera.unproject(touchPos);
-
-            // Check if the touch is within the bounds of either button
-            if (!leftButtonBounds.contains(touchPos.x, touchPos.y) &&
-                    !rightButtonBounds.contains(touchPos.x, touchPos.y)) {
-                bucket.x = touchPos.x - (float) BUCKET_WIDTH / 2;
-
-                // Ensure bucket stays within screen bounds
-                if (bucket.x < LEFT_OF_SCREEN) {
-                    bucket.x = LEFT_OF_SCREEN;
-                } else if (bucket.x > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
-                    bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
-                }
-            }
-        }
-    }
-
-
-    private void spawnRaindrop() {
-        Rectangle rectangle = new Rectangle();
-        rectangle.x = MathUtils.random(0, WIDTH - BUCKET_WIDTH);
-        rectangle.y = HEIGHT;
-        rectangle.width = RAINDROP_WIDTH;
-        rectangle.height = RAINDROP_HEIGHT;
-
-        int randomInt = MathUtils.random(0, 12);
-        TextureRegion textureRegion = atlas.findRegion("droplet-" + randomInt);
-
-        Raindrop raindrop = new Raindrop(rectangle, textureRegion);
-
-        raindrops.add(raindrop);
-        lastDropTime = TimeUtils.nanoTime();
-    }
-
-
-    private void renderBackground(SpriteBatch batch) {
-        float scaledHeight = tileTexture.getRegionHeight() * SCALE_FACTOR;
-        float scaledWidth = tileTexture.getRegionWidth() * SCALE_FACTOR;
-
-        for (float x = LEFT_OF_SCREEN; x < WIDTH; x += scaledWidth) {
-            for (float y = backgroundY; y < HEIGHT; y += scaledHeight) {
-                batch.draw(tileTexture, x, y, scaledWidth, scaledHeight);
-            }
-        }
+        stage.draw();*/
     }
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
+        /*viewport.update(width, height, true);
         // Update the camera with the new window size
         camera.viewportWidth = width;
         camera.viewportHeight = height;
@@ -387,22 +171,22 @@ public class DropGame extends Game {
         stage.getViewport().update(width, height, true);
 
         // Call a method to update the button bounds
-        updateButtonBounds();
+        updateButtonBounds();*/
     }
 
     private void updateButtonBounds() {
-        leftButtonBounds.set(arrowLeftButton.getX(), arrowLeftButton.getY(),
+        /*leftButtonBounds.set(arrowLeftButton.getX(), arrowLeftButton.getY(),
                 arrowLeftButton.getWidth(), arrowLeftButton.getHeight());
         rightButtonBounds.set(arrowRightButton.getX(), arrowRightButton.getY(),
-                arrowRightButton.getWidth(), arrowRightButton.getHeight());
+                arrowRightButton.getWidth(), arrowRightButton.getHeight());*/
     }
 
     @Override
     public void dispose() {
-        atlas.dispose();
+        /*atlas.dispose();
         stage.dispose();
         dropletSound.dispose();
         rainMusic.dispose();
-        batch.dispose();
+        batch.dispose();*/
     }
 }
