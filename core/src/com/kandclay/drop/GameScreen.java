@@ -282,7 +282,7 @@ public class GameScreen implements Screen {
 
     private boolean isStageTouched() {
         for (Actor actor : stage.getActors()) {
-            if (actor.hit(touchPos.x - actor.getX() , touchPos.y - actor.getY(), true) != null) {
+            if (actor.hit(touchPos.x - actor.getX(), touchPos.y - actor.getY(), true) != null) {
                 return true;
             }
         }

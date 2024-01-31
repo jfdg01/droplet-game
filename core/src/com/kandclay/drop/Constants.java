@@ -32,4 +32,9 @@ public class Constants {
     public static final int LEFT_BUTTON_Y = TOP_OF_SCREEN - PADDING_PIXELS - BUTTON_HEIGHT;
     public static final int RIGHT_BUTTON_Y = TOP_OF_SCREEN - PADDING_PIXELS - BUTTON_HEIGHT;
 
+    public static final int PLAY_BUTTON_Y = HEIGHT/2;
+    public static final int EXIT_BUTTON_Y = HEIGHT/2 - BUTTON_HEIGHT - PADDING_BETWEEN_BUTTONS;
+    public static final int PLAY_BUTTON_X = WIDTH/2 - BUTTON_WIDTH/2;
+    public static final int EXIT_BUTTON_X = WIDTH/2 - BUTTON_WIDTH/2;
+
 }
