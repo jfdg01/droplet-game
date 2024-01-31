@@ -61,14 +61,6 @@ public class GameScreen implements Screen {
     private Vector3 touchPos;
 
     // Controls
-    private TextureRegion arrowLeftTexture;
-    private TextureRegion arrowRightTexture;
-    private Image arrowLeftButton;
-    private Image arrowRightButton;
-    Rectangle leftButtonBounds;
-    Rectangle rightButtonBounds;
-    boolean isLeftPressed = false;
-    boolean isRightPressed = false;
     float bucketMoveAmount;
 
     // Stage
@@ -95,7 +87,7 @@ public class GameScreen implements Screen {
             raindrops.add(raindrop);
         }
 
-        createButtons();
+        // createButtons();
 
         createViewport();
 
@@ -123,7 +115,7 @@ public class GameScreen implements Screen {
 
     }
 
-    private void renderLogic(float delta) {
+    private void renderLogic() {
         // Draw the assets according to their current position
         batch.begin();
         batch.setProjectionMatrix(camera.combined);
@@ -155,6 +147,8 @@ public class GameScreen implements Screen {
 
         spawnRaindrop();
 
+        handleControls();
+
         camera.update();
     }
 
@@ -164,9 +158,7 @@ public class GameScreen implements Screen {
 
         updateLogic(delta);
 
-        renderLogic(delta);
-
-        handleControls();
+        renderLogic();
 
         stage.act(delta);
 
@@ -182,7 +174,7 @@ public class GameScreen implements Screen {
         stage.getViewport().update(width, height, true);
 
         // Call a method to update the button bounds
-        updateButtonBounds();
+        // updateButtonBounds();
     }
 
 
@@ -229,7 +221,7 @@ public class GameScreen implements Screen {
 
     }
 
-    private void handleMovementButtons(float bucketMoveAmount) {
+    /*private void handleMovementButtons(float bucketMoveAmount) {
         if (isLeftPressed) {
             if (bucket.x - bucketMoveAmount < LEFT_OF_SCREEN) {
                 bucket.x = 0;
@@ -245,10 +237,10 @@ public class GameScreen implements Screen {
                 bucket.x += bucketMoveAmount;
             }
         }
-    }
+    }*/
 
     private void handleControls() {
-        handleMovementButtons(bucketMoveAmount);
+        // handleMovementButtons(bucketMoveAmount);
         handleArrowKeys(bucketMoveAmount);
         handleTouchInput();
     }
@@ -259,8 +251,8 @@ public class GameScreen implements Screen {
         bucketTexture = atlas.findRegion("bucket");
         greyDropTexture = atlas.findRegion("droplet-greyscale");
         tileTexture = atlas.findRegion("rain");
-        arrowLeftTexture = atlas.findRegion("arrow-left");
-        arrowRightTexture = atlas.findRegion("arrow-right");
+        // arrowLeftTexture = atlas.findRegion("arrow-left");
+        // arrowRightTexture = atlas.findRegion("arrow-right");
 
         dropletTextures = new Array<>();
         for (int i = 0; i < 13; i++) {
@@ -271,7 +263,7 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void createButtons() {
+    /*private void createButtons() {
         arrowLeftButton = new Image(new TextureRegionDrawable(new TextureRegion(arrowLeftTexture)));
         arrowRightButton = new Image(new TextureRegionDrawable(new TextureRegion(arrowRightTexture)));
 
@@ -315,14 +307,14 @@ public class GameScreen implements Screen {
                 isRightPressed = false;
             }
         });
-    }
+    }*/
 
-    private void updateButtonBounds() {
+    /*private void updateButtonBounds() {
         leftButtonBounds.set(arrowLeftButton.getX(), arrowLeftButton.getY(),
                 arrowLeftButton.getWidth(), arrowLeftButton.getHeight());
         rightButtonBounds.set(arrowRightButton.getX(), arrowRightButton.getY(),
                 arrowRightButton.getWidth(), arrowRightButton.getHeight());
-    }
+    }*/
 
     private void createViewport() {
         // Batch
@@ -336,8 +328,8 @@ public class GameScreen implements Screen {
         viewport = new FitViewport(WIDTH, HEIGHT, camera);
         stage = new Stage(viewport, batch);
         Gdx.input.setInputProcessor(stage); // Set the stage as the input processor
-        stage.addActor(arrowLeftButton);
-        stage.addActor(arrowRightButton);
+        // stage.addActor(arrowLeftButton);
+        // stage.addActor(arrowRightButton);
     }
 
     private void updateRaindropPosition() {
@@ -398,17 +390,17 @@ public class GameScreen implements Screen {
             camera.unproject(touchPos);
 
             // Check if the touch is within the bounds of either button
-            if (!leftButtonBounds.contains(touchPos.x, touchPos.y) &&
-                    !rightButtonBounds.contains(touchPos.x, touchPos.y)) {
-                bucket.x = touchPos.x - (float) BUCKET_WIDTH / 2;
+            /*if (!leftButtonBounds.contains(touchPos.x, touchPos.y) &&
+                    !rightButtonBounds.contains(touchPos.x, touchPos.y)) {*/
+            bucket.x = touchPos.x - (float) BUCKET_WIDTH / 2;
 
-                // Ensure bucket stays within screen bounds
-                if (bucket.x < LEFT_OF_SCREEN) {
-                    bucket.x = LEFT_OF_SCREEN;
-                } else if (bucket.x > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
-                    bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
-                }
+            // Ensure bucket stays within screen bounds
+            if (bucket.x < LEFT_OF_SCREEN) {
+                bucket.x = LEFT_OF_SCREEN;
+            } else if (bucket.x > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
+                bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
             }
+            //}
         }
     }
 
