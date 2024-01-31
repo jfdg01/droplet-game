@@ -21,11 +21,15 @@ public class Constants {
     public static final int MAX_TIMES_BLINKED = 3;
     public static final float SCALE_FACTOR = 0.6f;
     public static final float BACKGROUND_SCROLL_SPEED = 120f;
-    public static final int PADDING_TOP_PIXELS = 20;
+    public static final int PADDING_PIXELS = 20;
     public static final int PADDING_BETWEEN_BUTTONS = 20;
     public static final int LEFT = 0;
     public static final int RIGHT = 1;
-
-
+    public static final int BUTTON_WIDTH = 180;
+    public static final int BUTTON_HEIGHT = 80;
+    public static final int LEFT_BUTTON_X = LEFT_OF_SCREEN + PADDING_PIXELS;
+    public static final int RIGHT_BUTTON_X = WIDTH - BUTTON_WIDTH - PADDING_PIXELS;
+    public static final int LEFT_BUTTON_Y = TOP_OF_SCREEN - PADDING_PIXELS - BUTTON_HEIGHT;
+    public static final int RIGHT_BUTTON_Y = TOP_OF_SCREEN - PADDING_PIXELS - BUTTON_HEIGHT;
 
 }

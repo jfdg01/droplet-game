@@ -12,11 +12,12 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -49,8 +50,6 @@ public class GameScreen implements Screen {
 
     // Background
     private TextureRegion tileTexture;
-    private int tileWidth;
-    private int tileHeight;
     private int backgroundY = 0;
 
 
@@ -66,6 +65,11 @@ public class GameScreen implements Screen {
     // Stage
     Stage stage;
     Viewport viewport;
+    private Skin skin;
+    private TextButton leftButton;
+    private TextButton rightButton;
+    private boolean isLeftPressed;
+    private boolean isRightPressed;
 
     public GameScreen(DropGame game) {
         this.game = game;
@@ -87,7 +91,7 @@ public class GameScreen implements Screen {
             raindrops.add(raindrop);
         }
 
-        // createButtons();
+        createButtons();
 
         createViewport();
 
@@ -106,8 +110,25 @@ public class GameScreen implements Screen {
         bucket.height = BUCKET_HEIGHT;
 
         // Background parameters
-        tileHeight = (int) (tileTexture.getRegionHeight() * SCALE_FACTOR);
-        tileWidth = (int) (tileTexture.getRegionWidth() * SCALE_FACTOR);
+        int tileHeight = (int) (tileTexture.getRegionHeight() * SCALE_FACTOR);
+        int tileWidth = (int) (tileTexture.getRegionWidth() * SCALE_FACTOR);
+    }
+
+    public void loadTextures() {
+
+        skin = new Skin(Gdx.files.internal("skins/pixthulhuui/pixthulhu-ui.json"), new TextureAtlas(Gdx.files.internal("skins/pixthulhuui/pixthulhu-ui.atlas")));
+        atlas = new TextureAtlas(Gdx.files.internal("atlas/main.atlas"));
+        bucketTexture = atlas.findRegion("bucket");
+        greyDropTexture = atlas.findRegion("droplet-greyscale");
+        tileTexture = atlas.findRegion("rain");
+
+        dropletTextures = new Array<>();
+        for (int i = 0; i < 13; i++) {
+            TextureRegion dropletTexture = atlas.findRegion("droplet-" + i);
+            if (dropletTexture != null) {
+                dropletTextures.add(dropletTexture);
+            }
+        }
     }
 
     @Override
@@ -202,6 +223,30 @@ public class GameScreen implements Screen {
         batch.dispose();
     }
 
+    private void handleControls() {
+        handleMovementButtons(bucketMoveAmount);
+        handleArrowKeys(bucketMoveAmount);
+        handleTouchInput();
+    }
+
+    private void handleMovementButtons(float bucketMoveAmount) {
+        if (isLeftPressed) {
+            if (bucket.x - bucketMoveAmount < LEFT_OF_SCREEN) {
+                bucket.x = 0;
+            } else {
+                bucket.x -= bucketMoveAmount;
+            }
+        }
+
+        if (isRightPressed) {
+            if (bucket.x + bucketMoveAmount > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
+                bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
+            } else {
+                bucket.x += bucketMoveAmount;
+            }
+        }
+    }
+
     public void handleArrowKeys(float moveAmount) {
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             if (bucket.x - moveAmount < LEFT_OF_SCREEN) {
@@ -221,72 +266,44 @@ public class GameScreen implements Screen {
 
     }
 
-    /*private void handleMovementButtons(float bucketMoveAmount) {
-        if (isLeftPressed) {
-            if (bucket.x - bucketMoveAmount < LEFT_OF_SCREEN) {
-                bucket.x = 0;
-            } else {
-                bucket.x -= bucketMoveAmount;
-            }
-        }
-
-        if (isRightPressed) {
-            if (bucket.x + bucketMoveAmount > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
+    private void handleTouchInput() {
+        touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
+        camera.unproject(touchPos);
+        if (Gdx.input.isTouched() && !isStageTouched()) {
+            bucket.x = touchPos.x - (float) BUCKET_WIDTH / 2;
+            // Ensure bucket stays within screen bounds
+            if (bucket.x < LEFT_OF_SCREEN) {
+                bucket.x = LEFT_OF_SCREEN;
+            } else if (bucket.x > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
                 bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
-            } else {
-                bucket.x += bucketMoveAmount;
-            }
-        }
-    }*/
-
-    private void handleControls() {
-        // handleMovementButtons(bucketMoveAmount);
-        handleArrowKeys(bucketMoveAmount);
-        handleTouchInput();
-    }
-
-    public void loadTextures() {
-
-        atlas = new TextureAtlas(Gdx.files.internal("atlas/main.atlas"));
-        bucketTexture = atlas.findRegion("bucket");
-        greyDropTexture = atlas.findRegion("droplet-greyscale");
-        tileTexture = atlas.findRegion("rain");
-        // arrowLeftTexture = atlas.findRegion("arrow-left");
-        // arrowRightTexture = atlas.findRegion("arrow-right");
-
-        dropletTextures = new Array<>();
-        for (int i = 0; i < 13; i++) {
-            TextureRegion dropletTexture = atlas.findRegion("droplet-" + i);
-            if (dropletTexture != null) {
-                dropletTextures.add(dropletTexture);
             }
         }
     }
 
-    /*private void createButtons() {
-        arrowLeftButton = new Image(new TextureRegionDrawable(new TextureRegion(arrowLeftTexture)));
-        arrowRightButton = new Image(new TextureRegionDrawable(new TextureRegion(arrowRightTexture)));
+    private boolean isStageTouched() {
+        for (Actor actor : stage.getActors()) {
+            if (actor.hit(touchPos.x - actor.getX() , touchPos.y - actor.getY(), true) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-        // Set the size of the buttons
-        float buttonSize = BUCKET_WIDTH; // Same size as the bucket
-        arrowLeftButton.setSize(buttonSize, buttonSize);
-        arrowRightButton.setSize(buttonSize, buttonSize);
 
-        // Position the buttons at the top center of the screen
-        float buttonY = HEIGHT - buttonSize - PADDING_TOP_PIXELS; // 20 pixels from the top
-        float centerX = (float) WIDTH / 2;
-        arrowLeftButton.setPosition(centerX - buttonSize - PADDING_BETWEEN_BUTTONS, buttonY); // 10 pixels apart
-        arrowRightButton.setPosition(centerX + PADDING_BETWEEN_BUTTONS, buttonY);
+    private void createButtons() {
+        leftButton = new TextButton("Left", skin, "default");
+        rightButton = new TextButton("Right", skin, "default");
 
-        leftButtonBounds = new Rectangle(arrowLeftButton.getX(), arrowLeftButton.getY(),
-                arrowLeftButton.getWidth(), arrowLeftButton.getHeight());
-        rightButtonBounds = new Rectangle(arrowRightButton.getX(), arrowRightButton.getY(),
-                arrowRightButton.getWidth(), arrowRightButton.getHeight());
-        arrowLeftButton.addListener(new InputListener() {
+        leftButton.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+        rightButton.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+        leftButton.setPosition(LEFT_BUTTON_X, LEFT_BUTTON_Y);
+        rightButton.setPosition(RIGHT_BUTTON_X, RIGHT_BUTTON_Y);
+
+        leftButton.addListener(new ClickListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 isLeftPressed = true;
-                return true; // Return true to indicate the event was handled
+                return true;
             }
 
             @Override
@@ -294,12 +311,11 @@ public class GameScreen implements Screen {
                 isLeftPressed = false;
             }
         });
-
-        arrowRightButton.addListener(new InputListener() {
+        rightButton.addListener(new ClickListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 isRightPressed = true;
-                return true; // Return true to indicate the event was handled
+                return true;
             }
 
             @Override
@@ -307,14 +323,7 @@ public class GameScreen implements Screen {
                 isRightPressed = false;
             }
         });
-    }*/
-
-    /*private void updateButtonBounds() {
-        leftButtonBounds.set(arrowLeftButton.getX(), arrowLeftButton.getY(),
-                arrowLeftButton.getWidth(), arrowLeftButton.getHeight());
-        rightButtonBounds.set(arrowRightButton.getX(), arrowRightButton.getY(),
-                arrowRightButton.getWidth(), arrowRightButton.getHeight());
-    }*/
+    }
 
     private void createViewport() {
         // Batch
@@ -328,8 +337,8 @@ public class GameScreen implements Screen {
         viewport = new FitViewport(WIDTH, HEIGHT, camera);
         stage = new Stage(viewport, batch);
         Gdx.input.setInputProcessor(stage); // Set the stage as the input processor
-        // stage.addActor(arrowLeftButton);
-        // stage.addActor(arrowRightButton);
+        stage.addActor(leftButton);
+        stage.addActor(rightButton);
     }
 
     private void updateRaindropPosition() {
@@ -381,26 +390,6 @@ public class GameScreen implements Screen {
             if (missed.times_blinked >= MAX_TIMES_BLINKED) {
                 missed.dead = true;
             }
-        }
-    }
-
-    private void handleTouchInput() {
-        if (Gdx.input.isTouched()) {
-            touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
-            camera.unproject(touchPos);
-
-            // Check if the touch is within the bounds of either button
-            /*if (!leftButtonBounds.contains(touchPos.x, touchPos.y) &&
-                    !rightButtonBounds.contains(touchPos.x, touchPos.y)) {*/
-            bucket.x = touchPos.x - (float) BUCKET_WIDTH / 2;
-
-            // Ensure bucket stays within screen bounds
-            if (bucket.x < LEFT_OF_SCREEN) {
-                bucket.x = LEFT_OF_SCREEN;
-            } else if (bucket.x > RIGHT_OF_SCREEN - BUCKET_WIDTH) {
-                bucket.x = RIGHT_OF_SCREEN - BUCKET_WIDTH;
-            }
-            //}
         }
     }
 
