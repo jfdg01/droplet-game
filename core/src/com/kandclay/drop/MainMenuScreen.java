@@ -4,6 +4,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -21,8 +22,11 @@ public class MainMenuScreen implements Screen {
     private final Game game;
     private Stage stage;
 
-    public MainMenuScreen(DropGame game) {
+    SpriteBatch batch;
+
+    public MainMenuScreen(DropGame game, SpriteBatch batch) {
         this.game = game;
+        this.batch = batch;
 
         skin = new Skin(Gdx.files.internal("skins/pixthulhuui/pixthulhu-ui.json"), new TextureAtlas(Gdx.files.internal("skins/pixthulhuui/pixthulhu-ui.atlas")));
 
@@ -37,7 +41,7 @@ public class MainMenuScreen implements Screen {
         playButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new GameScreen(game)); // Change to your game screen
+                game.setScreen(new GameScreen(game, batch)); // Change to your game screen
             }
         });
         stage.addActor(playButton);

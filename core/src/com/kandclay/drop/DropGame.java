@@ -1,16 +1,20 @@
 package com.kandclay.drop;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class DropGame extends Game {
 
     GameScreen gameScreen;
     MainMenuScreen mainMenuScreen;
+    SpriteBatch batch;
 
     @Override
     public void create() {
 
-        mainMenuScreen = new MainMenuScreen(this);
+        batch = new SpriteBatch();
+
+        mainMenuScreen = new MainMenuScreen(this, batch);
 
         this.setScreen(mainMenuScreen);
     }
@@ -31,7 +35,14 @@ public class DropGame extends Game {
     }
 
     public void startGame() {
-        gameScreen = new GameScreen(this);
+
+
+
+        gameScreen = new GameScreen(this, batch);
         this.setScreen(gameScreen);
+    }
+
+    public SpriteBatch getBatch() {
+        return batch;
     }
 }

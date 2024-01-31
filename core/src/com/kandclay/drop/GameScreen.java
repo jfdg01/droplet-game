@@ -2,10 +2,13 @@ package com.kandclay.drop;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -19,6 +22,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -32,6 +36,8 @@ import static com.kandclay.drop.Constants.SCALE_FACTOR;
 public class GameScreen implements Screen {
 
     private DropGame game;
+
+    SpriteBatch batch;
 
     // Atlas
     TextureAtlas atlas;
@@ -56,7 +62,6 @@ public class GameScreen implements Screen {
     // Extra
     private Music rainMusic;
     private OrthographicCamera camera;
-    private SpriteBatch batch;
     private Vector3 touchPos;
 
     // Controls
@@ -71,8 +76,9 @@ public class GameScreen implements Screen {
     private boolean isLeftPressed;
     private boolean isRightPressed;
 
-    public GameScreen(DropGame game) {
+    public GameScreen(DropGame game, SpriteBatch batch) {
         this.game = game;
+        this.batch = batch;
 
         createGame();
     }
@@ -131,9 +137,30 @@ public class GameScreen implements Screen {
         }
     }
 
+    private Texture getScreenTexture() {
+        byte[] pixels = ScreenUtils.getFrameBufferPixels(true);
+        Pixmap pixmap = new Pixmap(Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), Pixmap.Format.RGBA8888);
+        BufferUtils.copy(pixels, 0, pixmap.getPixels(), pixels.length);
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
+    }
+
     @Override
     public void show() {
 
+        // Setup input processor
+        Gdx.input.setInputProcessor(new InputAdapter() {
+            @Override
+            public boolean keyDown(int keycode) {
+                if (keycode == Input.Keys.ESCAPE) {
+                    Texture screenTexture = getScreenTexture();
+                    game.setScreen(new PauseScreen(game, screenTexture, batch, GameScreen.this));
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     private void renderLogic() {
@@ -327,7 +354,6 @@ public class GameScreen implements Screen {
 
     private void createViewport() {
         // Batch
-        batch = new SpriteBatch();
 
         // Camera
         camera = new OrthographicCamera();
